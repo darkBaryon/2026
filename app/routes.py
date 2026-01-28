@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from flask import Blueprint, jsonify, render_template, request
@@ -5,6 +6,7 @@ from flask import Blueprint, jsonify, render_template, request
 from app.services import ChatService
 
 bp = Blueprint("main", __name__)
+logger = logging.getLogger(__name__)
 
 # 简单场景下直接在模块级维护一个 Service 实例即可。
 chat_service = ChatService()
@@ -25,9 +27,11 @@ def chat():
     """
     data = request.get_json(force=True, silent=True) or {}
     user_message = data.get("message", "")
+    logger.info("[Route] /chat 收到: user_message=%r", user_message)
 
     ai_message = chat_service.handle_chat(user_message)
 
+    logger.info("[Route] /chat 返回: ai_message 长度=%d（完整内容见 [handle_chat] AI 回复）", len(ai_message))
     return jsonify(
         {
             "user": {

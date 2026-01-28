@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 import os
 from typing import Any, Dict, List
 
 from openai import OpenAI
 
 from .base import BaseLLMClient
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAIClient(BaseLLMClient):
@@ -48,6 +51,10 @@ class OpenAIClient(BaseLLMClient):
             )
 
         try:
+            total_chars = sum(len(m.get("content", "")) for m in messages)
+            logger.info("[LLM] 请求: model=%s, messages=%d, 总字符数=%d", self.model, len(messages), total_chars)
+            logger.debug("[LLM] 最后一条 user 内容(前150字): %s", (messages[-1].get("content", "")[:150] + "…") if len(messages[-1].get("content", "")) > 150 else messages[-1].get("content", ""))
+
             resp = self._client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -56,13 +63,18 @@ class OpenAIClient(BaseLLMClient):
 
             choices = resp.choices or []
             if not choices:
+                logger.warning("[LLM] 返回无 choices")
                 return "抱歉，AI 接口没有返回内容，请稍后再试。"
 
             content = choices[0].message.content
             if not content:
+                logger.warning("[LLM] 返回 content 为空")
                 return "抱歉，AI 接口返回内容为空，请稍后再试。"
 
-            return str(content).strip()
+            content = str(content).strip()
+            logger.info("[LLM] 回复: 长度=%d（完整内容见 [handle_chat] AI 回复）", len(content))
+            return content
         except Exception as e:  # noqa: BLE001
+            logger.error("[LLM] 调用异常: %s", e)
             return f"调用 AI 接口失败：{e}"
 

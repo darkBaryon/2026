@@ -40,12 +40,17 @@ def render_prompt(template_name: str, **kwargs: str | bool | None) -> str:
     try:
         template = env.get_template(template_name)
         rendered = template.render(**kwargs)
-        logger.debug(
-            "Prompt rendered. template=%s, kwargs_keys=%s",
+        out = rendered.strip()
+        ctx_len = len(kwargs.get("context") or "")
+        logger.info(
+            "[Prompt] render_prompt template=%s kwargs_keys=%s context_len=%d searched=%s -> 输出长度=%d",
             template_name,
             list(kwargs.keys()),
+            ctx_len,
+            kwargs.get("searched"),
+            len(out),
         )
-        return rendered.strip()
+        return out
     except TemplateNotFound as e:
         logger.error("Template not found: %s in directory %s", template_name, prompts_dir)
         raise
