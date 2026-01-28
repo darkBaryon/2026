@@ -12,7 +12,7 @@ chat_service = ChatService()
 
 @bp.get("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", history=chat_service.history)
 
 
 @bp.post("/chat")

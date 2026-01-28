@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>AI 客服 Demo</title>
-    <meta name.viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
       * {
         box-sizing: border-box;
@@ -35,12 +35,15 @@
         display: flex;
         align-items: center;
         gap: 8px;
+        background: #fff;
+        z-index: 10;
       }
       .avatar {
-        width: 32px;
-        height: 32px;
+        width: 36px;
+        height: 36px;
         border-radius: 999px;
         background: linear-gradient(135deg, #4f46e5, #22c55e);
+        flex-shrink: 0;
       }
       .chat-title {
         font-size: 15px;
@@ -57,40 +60,77 @@
         overflow-y: auto;
         background: radial-gradient(circle at top, #eef2ff, #f9fafb 45%);
       }
+
+      /* --- 核心布局修复开始 --- */
       .message-row {
         display: flex;
-        margin-bottom: 10px;
+        margin-bottom: 16px;
+        width: 100%;
       }
+      
+      /* 气泡的包裹层：控制最大宽度和内部对齐 */
+      .message-row > div {
+        max-width: 80%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* AI 靠左 */
+      .message-row.ai {
+        justify-content: flex-start;
+      }
+      .message-row.ai > div {
+        align-items: flex-start;
+      }
+
+      /* 用户靠右 */
       .message-row.user {
         justify-content: flex-end;
       }
-      .message-bubble {
-        max-width: 80%;
-        padding: 8px 12px;
-        border-radius: 999px;
-        font-size: 14px;
-        line-height: 1.4;
-        position: relative;
+      .message-row.user > div {
+        align-items: flex-end;
       }
+
+      /* 气泡本体 */
+      .message-bubble {
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.5;
+        position: relative;
+        
+        /* 🔥 关键属性：inline-block 让宽度自适应文字，不会被强制压缩 */
+        display: inline-block;
+        text-align: left;
+        
+        word-wrap: break-word;
+        word-break: break-word;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+      /* --- 核心布局修复结束 --- */
+
       .message-row.user .message-bubble {
         background: #4f46e5;
         color: white;
-        border-bottom-right-radius: 4px;
+        border-bottom-right-radius: 2px;
       }
       .message-row.ai .message-bubble {
-        background: #e5e7eb;
+        background: #ffffff;
         color: #111827;
-        border-bottom-left-radius: 4px;
+        border: 1px solid #e5e7eb;
+        border-bottom-left-radius: 2px;
       }
       .timestamp {
         font-size: 11px;
         color: #9ca3af;
-        margin-top: 2px;
+        margin-top: 4px;
+        padding: 0 2px;
       }
+      
       .chat-footer {
-        padding: 10px 12px;
+        padding: 12px 16px;
         border-top: 1px solid #e5e7eb;
-        background: #f9fafb;
+        background: #fff;
       }
       .input-row {
         display: flex;
@@ -98,31 +138,36 @@
       }
       .input-row input {
         flex: 1;
-        padding: 8px 10px;
+        padding: 10px 14px;
         border-radius: 999px;
-        border: 1px solid #d1d5db;
+        border: 1px solid #e5e7eb;
+        background: #f9fafb;
         font-size: 14px;
         outline: none;
+        transition: all 0.2s;
       }
       .input-row input:focus {
+        background: #fff;
         border-color: #4f46e5;
-        box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.35);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
       }
       .input-row button {
-        padding: 8px 14px;
+        padding: 8px 20px;
         border-radius: 999px;
         border: none;
         background: #4f46e5;
         color: white;
         font-size: 14px;
+        font-weight: 500;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 4px;
+        transition: background 0.2s;
+      }
+      .input-row button:hover {
+        background: #4338ca;
       }
       .input-row button:disabled {
-        opacity: 0.6;
-        cursor: default;
+        background: #9ca3af;
+        cursor: not-allowed;
       }
     </style>
   </head>
@@ -132,24 +177,23 @@
         <div class="avatar"></div>
         <div>
           <div class="chat-title">AI 智能客服 Demo</div>
-          <div class="chat-subtitle">简单示例，可接入真实大模型</div>
         </div>
       </div>
       <div id="chat-body" class="chat-body">
-        <div class="message-row ai">
-          <div>
-            <div class="message-bubble">
-              你好～我是 AI 客服，有什么可以帮你？
+        {% for msg in history %}
+          <div class="message-row {{ 'user' if msg.role == 'user' else 'ai' }}">
+            <div>
+              <div class="message-bubble">{{ msg.content }}</div>
             </div>
           </div>
-        </div>
+        {% endfor %}
       </div>
       <div class="chat-footer">
         <form id="chat-form" class="input-row">
           <input
             id="message-input"
             type="text"
-            placeholder="请输入要咨询的问题，例如：我要退款 / 我要发票"
+            placeholder="请输入问题..."
             autocomplete="off"
           />
           <button id="send-btn" type="submit">
@@ -214,4 +258,3 @@
     </script>
   </body>
 </html>
-
