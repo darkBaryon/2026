@@ -1,0 +1,15 @@
+{
+  "active_provider": "openai",
+  "providers": {
+    "openai": {
+      "model": "gpt-4-turbo",
+      "temperature": 0.7,
+      "base_url": "https://api.openai.com/v1"
+    },
+    "deepseek": {
+      "model": "deepseek-chat",
+      "temperature": 0.3,
+      "base_url": "https://api.deepseek.com"
+    }
+  }
+}
