@@ -31,7 +31,13 @@ def chat():
 
     ai_message = chat_service.handle_chat(user_message)
 
-    logger.info("[Route] /chat 返回: ai_message 长度=%d（完整内容见 [handle_chat] AI 回复）", len(ai_message))
+    # 为了在入口层也能快速看到用户实际能看到的内容，这里打印一段摘要
+    snippet = ai_message[:120] + "…" if len(ai_message) > 120 else ai_message
+    logger.info(
+        "[Route] /chat 返回: ai_message 长度=%d, 内容摘要=%r",
+        len(ai_message),
+        snippet,
+    )
     return jsonify(
         {
             "user": {

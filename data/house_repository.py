@@ -8,7 +8,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    # 仅用于类型提示，运行时不引入对 app 层的依赖
+    from app.core.search_schema import HouseSearchQuery
 
 from data.house_data import MOCK_HOUSES
 
@@ -27,16 +31,36 @@ class HouseRepository:
 
     def query_houses(
         self,
+        query: "HouseSearchQuery | None" = None,
+        *,
         area: str | None = None,
         max_price: int | None = None,
     ) -> List[Dict[str, Any]]:
         """
         按区域和预算上限查询房源。
 
+        :param query: 协议层的 HouseSearchQuery 对象（可选），通常由 NLU 解析得到。
+                      如果同时传入 query 和显式的 area / max_price，显式参数优先生效。
+
         :param area: 意向区域关键词，对房源的 area 或 location 做模糊匹配；None 表示不限制。
         :param max_price: 预算上限（元/月），只保留 price <= max_price；None 表示不限制。
         :return: 按价格升序排序后的前 3 条，每条为房源字典（含 id, area, location, type, price, desc, tags）。
         """
+        # 从协议对象中解包检索条件（若提供）
+        if query is not None:
+            # NLU/Schema 约定：None 表示“不限”，因此仅在当前参数为 None 时才覆盖
+            if area is None:
+                area = getattr(query, "area", None)
+            if max_price is None:
+                max_price = getattr(query, "max_price", None)
+
+        logger.info(
+            "[Repository] query_houses 输入参数: query=%s, area=%r, max_price=%s",
+            query,
+            area,
+            max_price,
+        )
+
         results = []
 
         for house in self._data:

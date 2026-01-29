@@ -59,7 +59,9 @@ def configure_logging(app: Any) -> None:
     if getattr(root_logger, "_ai_demo_configured", False):
         return
 
-    root_logger.setLevel(logging.INFO)
+    # 控制台我们希望能看到尽可能完整的调用链路，因此根 logger 设为 DEBUG，
+    # 具体输出粒度由各 Handler 自己控制（文件仍然从 INFO 开始记录）。
+    root_logger.setLevel(logging.DEBUG)
 
     # 目录：以项目根目录为基准
     base_dir = getattr(app, "root_path", os.getcwd())
@@ -87,6 +89,11 @@ def configure_logging(app: Any) -> None:
 
     root_logger.addHandler(console_handler)
     root_logger.addHandler(file_handler)
+
+    # 第三方库降噪：只保留 WARNING 及以上，避免刷屏底层 HTTP 细节
+    noisy_libs = ["werkzeug", "httpx", "httpcore", "openai", "urllib3"]
+    for name in noisy_libs:
+        logging.getLogger(name).setLevel(logging.WARNING)
 
     # 标记避免重复初始化
     root_logger._ai_demo_configured = True  # type: ignore[attr-defined]
